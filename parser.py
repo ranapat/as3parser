@@ -7,7 +7,45 @@ class Parser:
     def __init__(self):
         self.collection =[]
 
-    
+    def complete_class(self, name, loose = False):
+        result = []
+        for class_object in self.collection:
+            if loose:
+                expression = re.compile("^.*" + name + ".*$")
+            else:
+                expression = re.compile("^" + name + ".*$")
+                
+            if expression.search(class_object["name"]) is not None:
+                result.append({ "name": class_object["name"], "package": class_object["package"] })
+        return result
+
+    def complete_member(self, name, class_name, loose = False, package = None):
+        result = []
+        for class_object in self.collection:
+            if loose:
+                expression = re.compile("^.*" + name + ".*$")
+            else:
+                expression = re.compile("^" + name + ".*$")
+
+            if class_object["name"] == class_name and ((package is not None and class_object["package"] == package) or (package is None)):
+                for method in class_object["methods"]:
+                    if expression.search(method["name"]) is not None and method["override"] is False:
+                        result.append({ "name": method["name"], "visibility": method["visibility"], "type": method["type"], "parameters": method["parameters"], "node": "method" })
+                for member in class_object["members"]:
+                    if expression.search(member["name"]) is not None:
+                        result.append({ "name": member["name"], "visibility": member["visibility"], "type": member["type"], "node": "member" })
+                for getter in class_object["getters"]:
+                    if expression.search(getter["name"]) is not None and getter["override"] is False:
+                        result.append({ "name": getter["name"], "visibility": getter["visibility"], "type": getter["type"], "node": "getter" })
+
+                for setter in class_object["setters"]:
+                    if expression.search(setter["name"]) is not None and setter["override"] is False:
+                        result.append({ "name": setter["name"], "visibility": setter["visibility"], "type": setter["type"], "node": "setter" })
+
+                if class_object["extends"] != "":
+                    result += self.complete_member(name, class_object["extends"], loose, package)
+
+        return result
 
     def look_for(self, class_name):
         for class_object in self.collection:
@@ -40,10 +78,10 @@ class Parser:
         class_extends_reg_exp = re.compile("extends\W*([^ \t\n\r]+)\W*(.*)\W*")
         class_implements_reg_exp = re.compile("implements\W*(.+)\W*")
         class_implements_interfaces_reg_exp = re.compile("\W*")
-        class_member_variables_reg_exp = re.compile("([public|private|protected]*)\W*var\W*([^ \t\n\r:]+)[ \t\n\r]*:[ \t\n\r]*([^ \t\n\r;]*)")
-        class_methods_reg_exp = re.compile("([override]*)\W*([public|private|protected]*)\W*([override]*)\W*function\W*([^ \t\n\r:\(]+)[ \t\n\r]*\(([^/)]*)\):[ \t\n\r]*([^ \t\n\r;]*)")
-        class_getters_reg_exp = re.compile("([override]*)\W*([public|private|protected]*)\W*([override]*)\W*function\W*get\W*([^ \t\n\r:\(]+)[ \t\n\r]*\(([^/)]*)\):[ \t\n\r]*([^ \t\n\r;]*)")
-        class_setters_reg_exp = re.compile("([override]*)\W*([public|private|protected]*)\W*([override]*)\W*function\W*set\W*([^ \t\n\r:\(]+)[ \t\n\r]*\(([^/)]*)\):[ \t\n\r]*([^ \t\n\r;]*)")
+        class_member_variables_reg_exp = re.compile("([public|private|protected]*)\W*var\W+([^ \t\n\r:]+)[ \t\n\r]*:[ \t\n\r]*([^ \t\n\r;]*)")
+        class_methods_reg_exp = re.compile("([override]*)\W*([public|private|protected]*)\W*([override]*)\W*function\W+([^ \t\n\r:\(]+)[ \t\n\r]*\(([^/)]*)\):[ \t\n\r]*([^ \t\n\r;]*)")
+        class_getters_reg_exp = re.compile("([override]*)\W*([public|private|protected]*)\W*([override]*)\W*function\W+get\W+([^ \t\n\r:\(]+)[ \t\n\r]*\(([^/)]*)\):[ \t\n\r]*([^ \t\n\r;]*)")
+        class_setters_reg_exp = re.compile("([override]*)\W*([public|private|protected]*)\W*([override]*)\W*function\W+set\W+([^ \t\n\r:\(]+)[ \t\n\r]*\(([^/)]*)\):[ \t\n\r]*([^ \t\n\r;]*)")
         class_remove_method_bodies_reg_exp = re.compile("{([^{])*?}")
 
         package_res = package_reg_exp.search(smashed)
