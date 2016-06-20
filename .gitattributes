@@ -1,0 +1,7 @@
+# Auto detect text files and perform LF normalization
+* text=auto
+
+# Flash
+*.as text eol=crlf
+*.xml text eol=crlf
+*.py text eol-crlf
