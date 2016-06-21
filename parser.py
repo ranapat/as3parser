@@ -1,6 +1,4 @@
 import re
-import fnmatch
-import os
 import json
 
 class Parser:
@@ -50,7 +48,6 @@ class Parser:
     def look_for(self, class_name):
         for class_object in self.collection:
             if class_object["name"] == class_name:
-                print "Class Located in", class_object["package"]
                 return class_object
                 break
 
