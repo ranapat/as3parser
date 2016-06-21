@@ -56,8 +56,11 @@ class Analyzer:
                                         sub_index += 1
 
                                     if sub_item is not None:
-                                        result = ("+" if sub_item["visibility"] == "public" else "*" if sub_item["visibility"] == "protected" else "-") + sub_item["name"] + "(" + sub_item["parameters"] + ")" + ":" + sub_item["type"] + "\n"
-                                        
+                                        if sub_item["node"] == "method":
+                                            result = ("+" if sub_item["visibility"] == "public" else "*" if sub_item["visibility"] == "protected" else "-") + sub_item["name"] + "(" + sub_item["parameters"] + ")" + ":" + sub_item["type"] + "\n"
+                                        else:
+                                            result = ("+" if sub_item["visibility"] == "public" else "*" if sub_item["visibility"] == "protected" else "-") + sub_item["name"] + ":" + sub_item["type"] + "\n"
+                                            
                                 return result
                             else:
                                 return ""
@@ -69,7 +72,6 @@ class Analyzer:
             current_line_groups = current_line_res.groups()
             current = current_line_groups[1]
             previous = current_line_groups[0]
-            print "Line ::", line, "\n", "Current ::", current, "\n", "Previous ::", previous
 
             if previous == "new":
                 for data in self.parser.complete_class(current):

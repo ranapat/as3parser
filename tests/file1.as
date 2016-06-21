@@ -13,6 +13,8 @@ package    l1.l2.l3
 		*/
 		public var v1:String;
 
+		new ControlG
+
 		public function ClassName1(a:uint, b:String) {}
 
 		/**
