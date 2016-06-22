@@ -1,3 +1,12 @@
+## setters type shall be the one from the parameters, not void
+
+
+
+
+
+
+
+
 import re
 import json
 

@@ -16,7 +16,7 @@ class Analyzer:
         while remove_things_in_closed_brackets_reg_exp.search(line) is not None:
             line = remove_things_in_closed_brackets_reg_exp.sub("", line)
 
-        pending_bracket_res = re.compile("([^\(\( \t\n\r]*)\W*\(([^\)\(]*?)$").search(line)
+        pending_bracket_res = re.compile("([^\(\) \t\n\r]*)\W*\(([^\)\(]*?)$").search(line)
         if pending_bracket_res is not None:
             pending_bracket_groups = pending_bracket_res.groups()
             if len(pending_bracket_groups) == 2:
@@ -33,7 +33,7 @@ class Analyzer:
                     matching_class = self.parser.look_for(function_name)
                     if matching_class is not None:
                         for data in matching_class["constructor"]:
-                            result += data
+                            result += data if data != "" else "--no parameters--"
                         return result
                     else:
                         sub_parts = function_name.split(".")
@@ -67,6 +67,7 @@ class Analyzer:
                         else:
                             return ""
 
+
         current_line_res = re.compile("([^ \t\n\r]+)[ |\t|\n|\r]+([^ \t\n\r]+)$").search(line)
         if current_line_res is not None:
             current_line_groups = current_line_res.groups()
@@ -78,11 +79,53 @@ class Analyzer:
                     result += data["package"] + "." + data["name"] + "\n"
 
                 return result
-            else:
-                return ""
 
+        pending_no_bracket_res = re.compile("([^\(\) \t\n\r]*)$").search(line)
+        if pending_no_bracket_res is not None:
+            pending_no_bracket_groups = pending_no_bracket_res.groups()
+            if len(pending_no_bracket_groups) == 1:
+                function_name = pending_no_bracket_groups[0]
+
+                local_function = self.locate_partial_function(function_name, content)
+                if len(local_function) != 0:
+                    for data in local_function:
+                        result += data[0] + "(" + data[1] + ")" + ":" + data[2] + "\n"
+                    return result
+                else:
+                    sub_parts = function_name.split(".")
+                    if len(sub_parts) > 1:
+                        local_member = self.locate_member(sub_parts[0], content)
+                        if len(local_member) != 0:
+                            result = self.iterate_dotted_string(sub_parts[1:], local_member[0])
+                            
+                            return result
+                        else:
+                            return ""
+                    else:
+                        return ""
 
         return ""
+
+    def iterate_dotted_string(self, parts, type):
+        result = ""
+
+        sub_parts = self.parser.complete_member("^" + parts[0] + ("" if 1 == len(parts) else "$"), type)
+        if len(sub_parts) > 0:
+            if 1 == len(parts):
+                for sub_item in sub_parts:
+                    if sub_item["node"] == "method":
+                        result += ("+" if sub_item["visibility"] == "public" else "*" if sub_item["visibility"] == "protected" else "-") + sub_item["name"] + "(" + sub_item["parameters"] + ")" + ":" + sub_item["type"] + "\n"
+                    elif sub_item["node"] == "getter":
+                        result += ("+" if sub_item["visibility"] == "public" else "*" if sub_item["visibility"] == "protected" else "-") + " set " + sub_item["name"] + ":" + sub_item["type"] + "\n"
+                    elif sub_item["node"] == "setter":
+                        result += ("+" if sub_item["visibility"] == "public" else "*" if sub_item["visibility"] == "protected" else "-") + " get " + sub_item["name"] + ":" + sub_item["type"] + "\n"
+                    else:
+                        result += ("+" if sub_item["visibility"] == "public" else "*" if sub_item["visibility"] == "protected" else "-") + sub_item["name"] + ":" + sub_item["type"] + "\n"
+            else:
+                for sub_item in sub_parts:
+                    result += self.iterate_dotted_string(parts[1:], sub_item["type"])
+
+        return result
 
     def locate_member(self, name, content):
         result = re.compile("var\W+" + name + "\W*:\W*(\w+)").findall(content.replace("\n", "").replace("\r", ""))
@@ -98,3 +141,9 @@ class Analyzer:
         else:
             return []
 
+    def locate_partial_function(self, name, content):
+        result = re.compile("function\W+(" + name + "[^ \t\n\r\(]*)\W*\(([^\(]*)\)\W*:\W*(\w+)").findall(content.replace("\n", "").replace("\r", ""))
+        if result is not None:
+            return result
+        else:
+            return []
