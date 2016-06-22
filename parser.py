@@ -1,13 +1,6 @@
-## setters type shall be the one from the parameters, not void
-
-
-
-
-
-
-
-
 import re
+import os
+import fnmatch
 import json
 
 class Parser:
@@ -166,7 +159,7 @@ class Parser:
                         class_getters = [ {"override": (a or c) == "override", "visibility": b or "private", "name": d, "parameters": e, "type": f} for a, b, c, d, e, f in class_getters_reg_exp.findall(no_method_bodies_scope)]
                         if debug: print "class getters", class_getters, "\n"
 
-                        class_setters = [ {"override": (a or c) == "override", "visibility": b or "private", "name": d, "parameters": e, "type": f} for a, b, c, d, e, f in class_setters_reg_exp.findall(no_method_bodies_scope)]
+                        class_setters = [ {"override": (a or c) == "override", "visibility": b or "private", "name": d, "parameters": e, "type": e.split(":")[1] if len(e.split(":")) == 2 else f} for a, b, c, d, e, f in class_setters_reg_exp.findall(no_method_bodies_scope)]
                         if debug: print "class setters", class_setters, "\n"
 
         return { "package": package_name, "name": class_name, "visibility": class_visibility, "final": class_final, "extends": class_extends, "implements": class_implements, "constructor": class_constructor_parameters, "members": class_member_variables, "methods": class_methods, "getters": class_getters, "setters": class_setters }
