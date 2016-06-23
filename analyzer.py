@@ -69,7 +69,6 @@ class Analyzer:
                         else:
                             return ""
 
-
         current_line_res = re.compile("([^ \t\n\r]+)[ |\t|\n|\r]+([^ \t\n\r]+)$").search(line)
         if current_line_res is not None:
             current_line_groups = current_line_res.groups()

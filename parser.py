@@ -60,16 +60,22 @@ class Parser:
     def cache_from(self, file_name):
         with open(file_name) as infile:
             self.collection = json.load(infile)
+
+    def remove_from_cache(self, class_name):
+        for class_object in self.collection:
+            if class_object["name"] == class_name:
+                self.collection.remove(class_object)
+                break
         
-    def parse_directory(self, name):
+    def parse_directory(self, name, debug = False):
         for root, dirnames, filenames in os.walk(name):
             for filename in fnmatch.filter(filenames, "*.as"):
-                self.collection.append(self.parse_file(os.path.join(root, filename)))
+                self.parse_file(os.path.join(root, filename), debug)
 
     def parse_file(self, name, debug = False):
-        f = open(name, "r")
+        self.parse_content(open(name, "r").read())
 
-        content = f.read()
+    def parse_content(self, content, debug = False):
         smashed = re.compile("/\*\*.*?\*/").sub("", content.replace("\n", "").replace("\r", ""))
 
         package_reg_exp = re.compile("package\W+([^ \t\n\r{]*)\W*{(.*)}")
@@ -162,4 +168,5 @@ class Parser:
                         class_setters = [ {"override": (a or c) == "override", "visibility": b or "private", "name": d, "parameters": e, "type": e.split(":")[1] if len(e.split(":")) == 2 else f} for a, b, c, d, e, f in class_setters_reg_exp.findall(no_method_bodies_scope)]
                         if debug: print "class setters", class_setters, "\n"
 
-        return { "package": package_name, "name": class_name, "visibility": class_visibility, "final": class_final, "extends": class_extends, "implements": class_implements, "constructor": class_constructor_parameters, "members": class_member_variables, "methods": class_methods, "getters": class_getters, "setters": class_setters }
+        self.remove_from_cache("class_name")
+        self.collection.append({ "package": package_name, "name": class_name, "visibility": class_visibility, "final": class_final, "extends": class_extends, "implements": class_implements, "constructor": class_constructor_parameters, "members": class_member_variables, "methods": class_methods, "getters": class_getters, "setters": class_setters })
