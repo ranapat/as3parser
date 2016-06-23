@@ -1,14 +1,9 @@
 import os
 import re
-import parser
-import settings
 
 class Analyzer:
-    def __init__(self):
-        self.settings = settings.Settings()
-        
-        self.parser = parser.Parser()
-        self.parser.cache_from(self.settings.class_data)
+    def __init__(self, parser):
+        self.parser = parser
 
         self.stripped_content = ""
         
