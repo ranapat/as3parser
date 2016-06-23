@@ -9,9 +9,12 @@ class Analyzer:
         
         self.parser = parser.Parser()
         self.parser.cache_from(self.settings.class_data)
+
+        self.stripped_content = ""
         
     def guess(self, line, content = ""):
         result = ""
+        self.strip_content(content)
 
         remove_things_in_closed_brackets_reg_exp = re.compile("(\([^\(\)]*\))")
         while remove_things_in_closed_brackets_reg_exp.search(line) is not None:
@@ -25,7 +28,7 @@ class Analyzer:
                 function_parameters = pending_bracket_groups[1]
                 function_at_parameter = len(function_parameters.split(","))
 
-                local_function = self.locate_function(function_name, content)
+                local_function = self.locate_function(function_name)
                 if len(local_function) != 0:
                     for data in local_function:
                         result += function_name + "(" + data[0] + ")" + ":" + data[1] + "\n"
@@ -45,7 +48,7 @@ class Analyzer:
                             sub_index = 0
                             sub_type = sub_parts[0]
 
-                            local_member = self.locate_member(sub_type, content)
+                            local_member = self.locate_member(sub_type)
                             if len(sub_parts) > 1 and len(local_member) != 0:
                                 sub_items = self.parser.complete_member(sub_parts[sub_index + 1] + "$", local_member[0])
                                 if len(sub_items) > 0:
@@ -90,7 +93,7 @@ class Analyzer:
             if len(pending_no_bracket_groups) == 1:
                 function_name = pending_no_bracket_groups[0]
 
-                local_function = self.locate_partial_function(function_name, content)
+                local_function = self.locate_partial_function(function_name)
                 if len(local_function) != 0:
                     for data in local_function:
                         result += data[0] + "(" + data[1] + ")" + ":" + data[2] + "\n"
@@ -101,7 +104,7 @@ class Analyzer:
                         if sub_parts[0] == "this":
                             sub_parts = sub_parts[1:]
                             
-                        local_member = self.locate_member(sub_parts[0], content)
+                        local_member = self.locate_member(sub_parts[0])
                         if len(sub_parts) > 1 and len(local_member) != 0:
                             result = self.iterate_dotted_string(sub_parts[1:], local_member[0])
                             
@@ -112,6 +115,9 @@ class Analyzer:
                         return ""
 
         return ""
+
+    def strip_content(self, content):
+        self.stripped_content = content.replace("\n", "").replace("\r", "")
 
     def iterate_dotted_string(self, parts, type):
         result = ""
@@ -134,40 +140,42 @@ class Analyzer:
 
         return result
 
-    def locate_member(self, name, content):
-        stripped_content = content.replace("\n", "").replace("\r", "")
-        
-        result = re.compile("var\W+" + name + "\W*:\W*(\w+)").findall(stripped_content)
+    def locate_member(self, name):
+        result = re.compile("function\W+" + name + "\W*\([^\(]*\)\W*:\W*(\w+)").findall(self.stripped_content)
         if len(result) > 0:
             return result
         else:
-            result = re.compile("function\W+get\W+" + name + "\W*\([^\(]*\)\W*:\W*(\w+)").findall(stripped_content)
+            result = re.compile("var\W+" + name + "\W*:\W*(\w+)").findall(self.stripped_content)
             if len(result) > 0:
                 return result
             else:
-                sub_result = re.compile("extends\W+([^ \t\n\r]+)").findall(stripped_content)
-                if len(sub_result) > 0:
-                    sub_result = self.parser.complete_member("^" + name + "$", sub_result[0])
+                result = re.compile("function\W+get\W+" + name + "\W*\([^\(]*\)\W*:\W*(\w+)").findall(self.stripped_content)
+                if len(result) > 0:
+                    return result
+                else:
+                    sub_result = re.compile("class\W+[^ \t\n\r]+\W+extends\W+([^ \t\n\r]+)").findall(self.stripped_content)
                     if len(sub_result) > 0:
-                        return [sub_result[0]["type"]]
-                #result = re.compile("function\W+set\W+" + name + "\W*\([^\(:]*:*([^\(]*)\)\W*:\W*\w+").findall(stripped_content)
-                #print result
-                #if len(result) > 0:
-                #    return result
-                #else:
-                #    return []
+                        sub_result = self.parser.complete_member("^" + name + "$", sub_result[0])
+                        if len(sub_result) > 0:
+                            return [sub_result[0]["type"]]
+                    #result = re.compile("function\W+set\W+" + name + "\W*\([^\(:]*:*([^\(]*)\)\W*:\W*\w+").findall(self.stripped_content)
+                    #print result
+                    #if len(result) > 0:
+                    #    return result
+                    #else:
+                    #    return []
 
         return []
 
-    def locate_function(self, name, content):
-        result = re.compile("function\W+" + name + "\W*\(([^\(]*)\)\W*:\W*(\w+)").findall(content.replace("\n", "").replace("\r", ""))
+    def locate_function(self, name):
+        result = re.compile("function\W+" + name + "\W*\(([^\(]*)\)\W*:\W*(\w+)").findall(self.stripped_content)
         if result is not None:
             return result
         else:
             return []
 
-    def locate_partial_function(self, name, content):
-        result = re.compile("function\W+(" + name + "[^ \t\n\r\(]*)\W*\(([^\(]*)\)\W*:\W*(\w+)").findall(content.replace("\n", "").replace("\r", ""))
+    def locate_partial_function(self, name):
+        result = re.compile("function\W+(" + name + "[^ \t\n\r\(]*)\W*\(([^\(]*)\)\W*:\W*(\w+)").findall(self.stripped_content)
         if result is not None:
             return result
         else:
