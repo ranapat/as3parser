@@ -100,15 +100,18 @@ class Analyzer:
                     return result
                 else:
                     sub_parts = function_name.split(".")
-                    if len(sub_parts) > 1:
+                    if len(sub_parts) > 0:
                         if sub_parts[0] == "this":
                             sub_parts = sub_parts[1:]
+
+                        if len(sub_parts) > 0:
+                            local_member = self.locate_member(sub_parts[0])
+                            if len(local_member) != 0:
+                                result = self.iterate_dotted_string(sub_parts[1:], local_member[0])
                             
-                        local_member = self.locate_member(sub_parts[0])
-                        if len(sub_parts) > 1 and len(local_member) != 0:
-                            result = self.iterate_dotted_string(sub_parts[1:], local_member[0])
-                            
-                            return result
+                                return result
+                            else:
+                                return self.locate_partial_member(sub_parts[0])
                         else:
                             return ""
                     else:
@@ -166,6 +169,41 @@ class Analyzer:
                     #    return []
 
         return []
+
+    def locate_partial_member(self, name):
+        result = re.compile("function\W+(" + name + "[^ \t\n\r]*)\W*\(([^\(]*)\)\W*:\W*(\w+)").findall(self.stripped_content)
+        if len(result) > 0:
+            return [ data[0] + "(" + data[1] + ")" + ":" + data[2] for data in result ]
+        else:
+            result = re.compile("var\W+(" + name + "[^ \t\n\r]*)\W*:\W*(\w+)").findall(self.stripped_content)
+            if len(result) > 0:
+                return [ data[0] + ":" + data[1] for data in result ]
+            else:
+                result = re.compile("function\W+get\W+(" + name + "[^ \t\n\r]+)\W*\([^\(]*\)\W*:\W*(\w+)").findall(self.stripped_content)
+                if len(result) > 0:
+                    return [ data[0] + ":" + data[1] + " <getter>" for data in result ]
+                else:
+                    result = re.compile("function\W+set\W+(" + name + "[^ \t\n\r]*)\W*\([^\(:]*:*([^\(]*)\)\W*:\W*\w+").findall(self.stripped_content)
+                    if len(result) > 0:
+                        return [ data[0] + ":" + data[1] + " <setter>" for data in result ]
+                    else:
+                        sub_result = re.compile("class\W+[^ \t\n\r]+\W+extends\W+([^ \t\n\r]+)").findall(self.stripped_content)
+                        if len(sub_result) > 0:
+                            sub_result = self.parser.complete_member("^" + name, sub_result[0])
+                            if len(sub_result) > 0:
+                                result = ""
+                                for sub_item in sub_result:
+                                    if sub_item["node"] == "method":
+                                        result += ("+" if sub_item["visibility"] == "public" else "*" if sub_item["visibility"] == "protected" else "-") + " " + sub_item["name"] + "(" + sub_item["parameters"] + ")" + ":" + sub_item["type"] + "\n"
+                                    elif sub_item["node"] == "getter":
+                                        result += ("+" if sub_item["visibility"] == "public" else "*" if sub_item["visibility"] == "protected" else "-") + " " + sub_item["name"] + ":" + sub_item["type"] + " <setter>" + "\n"
+                                    elif sub_item["node"] == "setter":
+                                        result += ("+" if sub_item["visibility"] == "public" else "*" if sub_item["visibility"] == "protected" else "-") + " " + sub_item["name"] + ":" + sub_item["type"] + " <getter>" + "\n"
+                                    else:
+                                        result += ("+" if sub_item["visibility"] == "public" else "*" if sub_item["visibility"] == "protected" else "-") + " " + sub_item["name"] + ":" + sub_item["type"] + "\n"
+                                return result
+
+        return ""
 
     def locate_function(self, name):
         result = re.compile("function\W+" + name + "\W*\(([^\(]*)\)\W*:\W*(\w+)").findall(self.stripped_content)
