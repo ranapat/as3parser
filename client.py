@@ -1,3 +1,5 @@
+#!/usr/local/bin/python
+
 import os
 import sys
 import settings
@@ -8,22 +10,23 @@ def print_help_line(command, description):
     print 1 * " " + " - " + command
 
 def main():
+    if len(sys.argv) == 1:
+        print "Usage:"
+        print_help_line("set-project <name>", "Sets project scope. Current session cache is lost.")
+        print_help_line("load-from-cache", "Loads class definition from the cache.")
+        print_help_line("save-to-cache", "Saves class definition to the cache.")
+        print_help_line("reset-cache", "Resets the session cache.")
+        print_help_line("reset-class <name>", "Removes class definition from the cache.")
+        print_help_line("load-from-file <file>", "Loads class definition from a source file.")
+        print_help_line("load-from-directory <directory>", "Loads class definition form a source directory.")
+        print_help_line("load-from-content <content>", "Loads class definition from a content.")
+        print_help_line("<line> <content>", "Tries to autocomplete.")
+
+        return 1
+
     file = open(settings.Settings().server_uri, "r")
 
     wrapper = Pyro.core.getProxyForURI(file.read())
-
-    if len(sys.argv) == 1:
-        print "Usage:"
-        print_help_line("load-from-cache", "Loads class definition from the cache")
-        print_help_line("save-to-cache", "Saves class definition to the cache")
-        print_help_line("reset-cache", "Resets the session cache")
-        print_help_line("reset-class <name>", "Removes class definition from the cache")
-        print_help_line("load-from-file <file>", "Loads class definition from a source file")
-        print_help_line("load-from-directory <directory>", "Loads class definition form a source directory")
-        print_help_line("load-from-content <content>", "Loads class definition from a content")
-        print_help_line("<line> <content>", "Tries to autocomplete")
-
-        return 1
 
     if len(sys.argv) == 2:
         first_parameter = sys.argv[1]
@@ -46,6 +49,8 @@ def main():
         wrapper.load_from_directory(second_parameter)
     elif first_parameter == "load-from-content" and second_parameter is not None:
         wrapper.load_from_content(second_parameter)
+    elif first_parameter == "set-project" and second_parameter is not None:
+        wrapper.set_project(second_parameter)
     else:
         print wrapper.complete(first_parameter, second_parameter)
 
