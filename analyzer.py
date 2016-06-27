@@ -6,9 +6,11 @@ class Analyzer:
         self.parser = parser
 
         self.stripped_content = ""
+
+        self.result = []
         
     def guess(self, line, content = ""):
-        result = ""
+        self.reset_result()
         self.strip_content(content)
 
         remove_things_in_closed_brackets_reg_exp = re.compile("(\([^\(\)]*\))")
@@ -26,14 +28,17 @@ class Analyzer:
                 local_function = self.locate_function(function_name)
                 if len(local_function) != 0:
                     for data in local_function:
-                        result += function_name + "(" + data[0] + ")" + ":" + data[1] + "\n"
-                    return result
+                        self.to_result(function_name + "(" + data[0] + ")" + ":" + data[1], data[0])
+                    return self.result_to_string("tooltip")
                 else:
                     matching_class = self.parser.look_for(function_name)
                     if matching_class is not None:
                         for data in matching_class["constructor"]:
-                            result += data if data != "" else "--no parameters--"
-                        return result
+                            if data != "":
+                                self.to_result(matching_class["name"] + "(" + data + ")", data)
+                            else:
+                                self.to_result(matching_class["name"] + "()", "")
+                        return self.result_to_string("tooptip")
                     else:
                         sub_parts = function_name.split(".")
                         if len(sub_parts) > 1:
@@ -59,11 +64,10 @@ class Analyzer:
 
                                     if sub_item is not None:
                                         if sub_item["node"] == "method":
-                                            result = ("+" if sub_item["visibility"] == "public" else "*" if sub_item["visibility"] == "protected" else "-") + " " + sub_item["name"] + "(" + sub_item["parameters"] + ")" + ":" + sub_item["type"] + "\n"
+                                            self.to_result(("+" if sub_item["visibility"] == "public" else "*" if sub_item["visibility"] == "protected" else "-") + " " + sub_item["name"] + "(" + sub_item["parameters"] + ")" + ":" + sub_item["type"], sub_item["parameters"])
                                         else:
-                                            result = ("+" if sub_item["visibility"] == "public" else "*" if sub_item["visibility"] == "protected" else "-") + " " + sub_item["name"] + ":" + sub_item["type"] + "\n"
-                                            
-                                return result
+                                            self.to_result(("+" if sub_item["visibility"] == "public" else "*" if sub_item["visibility"] == "protected" else "-") + " " + sub_item["name"] + ":" + sub_item["type"], "")
+                                return self.result_to_string("tooltip")
                             else:
                                 return ""
                         else:
@@ -77,9 +81,8 @@ class Analyzer:
 
             if previous == "new":
                 for data in self.parser.complete_class(current):
-                    result += data["package"] + "." + data["name"] + "\n"
-
-                return result
+                    self.to_result(data["package"] + "." + data["name"], data["name"].replace(current, ""))
+                return self.result_to_string("complete")
 
         pending_no_bracket_res = re.compile("([^\(\) \t\n\r]*)$").search(line)
         if pending_no_bracket_res is not None:
@@ -90,8 +93,8 @@ class Analyzer:
                 local_function = self.locate_partial_function(function_name)
                 if len(local_function) != 0:
                     for data in local_function:
-                        result += data[0] + "(" + data[1] + ")" + ":" + data[2] + "\n"
-                    return result
+                        self.to_result(data[0] + "(" + data[1] + ")" + ":" + data[2], data[0].replace(function_name, ""))
+                    return self.result_to_string("complete")
                 else:
                     sub_parts = function_name.split(".")
                     if len(sub_parts) > 0:
@@ -101,11 +104,11 @@ class Analyzer:
                         if len(sub_parts) > 0:
                             local_member = self.locate_member(sub_parts[0])
                             if len(local_member) != 0:
-                                result = self.iterate_dotted_string(sub_parts[1:], local_member[0])
-                            
-                                return result
+                                self.iterate_dotted_string(sub_parts[1:], local_member[0], sub_parts[len(sub_parts) - 1])
+                                return self.result_to_string("complete")
                             else:
-                                return self.locate_partial_member(sub_parts[0])
+                                self.locate_partial_member(sub_parts[0], sub_parts[len(sub_parts) - 1])
+                                return self.result_to_string("complete")
                         else:
                             return ""
                     else:
@@ -113,10 +116,22 @@ class Analyzer:
 
         return ""
 
+    def reset_result(self):
+        self.result = []
+
+    def to_result(self, see, write):
+        self.result.append( {"see": see, "write": write}  )
+
+    def result_to_string(self, type):
+        result = type + "\n"
+        for data in self.result:
+            result += data["see"] + "@@@" + data["write"] + "\n"
+        return result
+
     def strip_content(self, content):
         self.stripped_content = content.replace("\n", "").replace("\r", "")
 
-    def iterate_dotted_string(self, parts, type):
+    def iterate_dotted_string(self, parts, type, current):
         result = ""
 
         sub_parts = self.parser.complete_member("^" + parts[0] + ("" if 1 == len(parts) else "$"), type)
@@ -124,16 +139,16 @@ class Analyzer:
             if 1 == len(parts):
                 for sub_item in sub_parts:
                     if sub_item["node"] == "method":
-                        result += ("+" if sub_item["visibility"] == "public" else "*" if sub_item["visibility"] == "protected" else "-") + " " + sub_item["name"] + "(" + sub_item["parameters"] + ")" + ":" + sub_item["type"] + "\n"
+                        self.to_result(("+" if sub_item["visibility"] == "public" else "*" if sub_item["visibility"] == "protected" else "-") + " " + sub_item["name"] + "(" + sub_item["parameters"] + ")" + ":" + sub_item["type"], sub_item["name"].replace(current, ""))
                     elif sub_item["node"] == "getter":
-                        result += ("+" if sub_item["visibility"] == "public" else "*" if sub_item["visibility"] == "protected" else "-") + " " + sub_item["name"] + ":" + sub_item["type"] + " <setter>" + "\n"
+                        self.to_result(("+" if sub_item["visibility"] == "public" else "*" if sub_item["visibility"] == "protected" else "-") + " " + sub_item["name"] + ":" + sub_item["type"] + " <setter>", sub_item["name"].replace(current, ""))
                     elif sub_item["node"] == "setter":
-                        result += ("+" if sub_item["visibility"] == "public" else "*" if sub_item["visibility"] == "protected" else "-") + " " + sub_item["name"] + ":" + sub_item["type"] + " <getter>" + "\n"
+                        self.to_result(("+" if sub_item["visibility"] == "public" else "*" if sub_item["visibility"] == "protected" else "-") + " " + sub_item["name"] + ":" + sub_item["type"] + " <getter>", sub_item["name"].replace(current, ""))
                     else:
-                        result += ("+" if sub_item["visibility"] == "public" else "*" if sub_item["visibility"] == "protected" else "-") + " " + sub_item["name"] + ":" + sub_item["type"] + "\n"
+                        self.to_result(("+" if sub_item["visibility"] == "public" else "*" if sub_item["visibility"] == "protected" else "-") + " " + sub_item["name"] + ":" + sub_item["type"], sub_item["name"].replace(current, ""))
             else:
                 for sub_item in sub_parts:
-                    result += self.iterate_dotted_string(parts[1:], sub_item["type"])
+                    self.iterate_dotted_string(parts[1:], sub_item["type"], current)
 
         return result
 
@@ -164,40 +179,40 @@ class Analyzer:
 
         return []
 
-    def locate_partial_member(self, name):
+    def locate_partial_member(self, name, current):
         result = re.compile("function\W+(" + name + "[^ \t\n\r]*)\W*\(([^\(]*)\)\W*:\W*(\w+)").findall(self.stripped_content)
         if len(result) > 0:
-            return [ data[0] + "(" + data[1] + ")" + ":" + data[2] for data in result ]
+            for data in result:
+                self.to_result(data[0] + "(" + data[1] + ")" + ":" + data[2], data[0].replace(current, ""))
         else:
             result = re.compile("var\W+(" + name + "[^ \t\n\r]*)\W*:\W*(\w+)").findall(self.stripped_content)
             if len(result) > 0:
-                return [ data[0] + ":" + data[1] for data in result ]
+                for data in result:
+                    self.to_result(data[0] + ":" + data[1], data[0].replace(current, ""))
             else:
                 result = re.compile("function\W+get\W+(" + name + "[^ \t\n\r]+)\W*\([^\(]*\)\W*:\W*(\w+)").findall(self.stripped_content)
                 if len(result) > 0:
-                    return [ data[0] + ":" + data[1] + " <getter>" for data in result ]
+                    for data in result:
+                        self.to_result(data[0] + ":" + data[1] + " <getter>", data[0].replace(current, ""))
                 else:
                     result = re.compile("function\W+set\W+(" + name + "[^ \t\n\r]*)\W*\([^\(:]*:*([^\(]*)\)\W*:\W*\w+").findall(self.stripped_content)
                     if len(result) > 0:
-                        return [ data[0] + ":" + data[1] + " <setter>" for data in result ]
+                        for data in result:
+                            self.to_result(data[0] + ":" + data[1] + " <setter>", data[0].replace(current, ""))
                     else:
                         sub_result = re.compile("class\W+[^ \t\n\r]+\W+extends\W+([^ \t\n\r]+)").findall(self.stripped_content)
                         if len(sub_result) > 0:
                             sub_result = self.parser.complete_member("^" + name, sub_result[0])
                             if len(sub_result) > 0:
-                                result = ""
                                 for sub_item in sub_result:
                                     if sub_item["node"] == "method":
-                                        result += ("+" if sub_item["visibility"] == "public" else "*" if sub_item["visibility"] == "protected" else "-") + " " + sub_item["name"] + "(" + sub_item["parameters"] + ")" + ":" + sub_item["type"] + "\n"
+                                        self.to_result(("+" if sub_item["visibility"] == "public" else "*" if sub_item["visibility"] == "protected" else "-") + " " + sub_item["name"] + "(" + sub_item["parameters"] + ")" + ":" + sub_item["type"], sub_item["name"].replace(current, ""))
                                     elif sub_item["node"] == "getter":
-                                        result += ("+" if sub_item["visibility"] == "public" else "*" if sub_item["visibility"] == "protected" else "-") + " " + sub_item["name"] + ":" + sub_item["type"] + " <setter>" + "\n"
+                                        self.to_result(("+" if sub_item["visibility"] == "public" else "*" if sub_item["visibility"] == "protected" else "-") + " " + sub_item["name"] + ":" + sub_item["type"] + " <setter>", sub_item["name"].replace(current, ""))
                                     elif sub_item["node"] == "setter":
-                                        result += ("+" if sub_item["visibility"] == "public" else "*" if sub_item["visibility"] == "protected" else "-") + " " + sub_item["name"] + ":" + sub_item["type"] + " <getter>" + "\n"
+                                        self.to_result(("+" if sub_item["visibility"] == "public" else "*" if sub_item["visibility"] == "protected" else "-") + " " + sub_item["name"] + ":" + sub_item["type"] + " <getter>", sub_item["name"].replace(current, ""))
                                     else:
-                                        result += ("+" if sub_item["visibility"] == "public" else "*" if sub_item["visibility"] == "protected" else "-") + " " + sub_item["name"] + ":" + sub_item["type"] + "\n"
-                                return result
-
-        return ""
+                                        self.to_result(("+" if sub_item["visibility"] == "public" else "*" if sub_item["visibility"] == "protected" else "-") + " " + sub_item["name"] + ":" + sub_item["type"], sub_item["name"].replace(current, ""))
 
     def locate_function(self, name):
         result = re.compile("function\W+" + name + "\W*\(([^\(]*)\)\W*:\W*(\w+)").findall(self.stripped_content)
