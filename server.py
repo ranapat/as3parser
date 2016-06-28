@@ -22,9 +22,12 @@ class Server:
                 print "Server already running? Forcing new instance! Check for garbage!"
                 current_pid = open(self.pid_file, "r").read()
                 print "Killing pid is", current_pid
-                os.kill(int(current_pid), signal.SIGTERM)
-                os.remove(self.uri_file)
-                os.remove(self.pid_file)
+                try:
+                    os.kill(int(current_pid), signal.SIGTERM)
+                    os.remove(self.uri_file)
+                    os.remove(self.pid_file)
+                except:
+                    pass
             else:
                 print "Server already running?"
                 return 1;
@@ -65,7 +68,7 @@ if __name__ == "__main__":
     try:
         sys.exit(server.main())
     except:
-        raise
+        pass
     finally:
         server.cleanup()
 
