@@ -1,5 +1,5 @@
 (defvar as3parser-client-path "~/Projects/as3parser/client.py")
-(defvar as3parser-server-path "~/Projects/as3parser/server.py &")
+(defvar as3parser-server-path "~/Projects/as3parser/server.py --force &")
 
 (defun as3parser-start-server ()
   "Starts the auto complete server."
