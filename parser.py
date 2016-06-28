@@ -84,9 +84,9 @@ class Parser:
         class_implements_reg_exp = re.compile("implements\W+(.+)\W*")
         class_implements_interfaces_reg_exp = re.compile("\W*")
         class_member_variables_reg_exp = re.compile("([public|private|protected]*)\W*var\W+([^ \t\n\r:]+)[ \t\n\r]*:[ \t\n\r]*([^ \t\n\r;]*)")
-        class_methods_reg_exp = re.compile("([override]*)\W*([public|private|protected]*)\W*([override]*)\W*function\W+([^ \t\n\r:\(]+)[ \t\n\r]*\(([^/)]*)\):[ \t\n\r]*([^ \t\n\r;]*)")
-        class_getters_reg_exp = re.compile("([override]*)\W*([public|private|protected]*)\W*([override]*)\W*function\W+get\W+([^ \t\n\r:\(]+)[ \t\n\r]*\(([^/)]*)\):[ \t\n\r]*([^ \t\n\r;]*)")
-        class_setters_reg_exp = re.compile("([override]*)\W*([public|private|protected]*)\W*([override]*)\W*function\W+set\W+([^ \t\n\r:\(]+)[ \t\n\r]*\(([^/)]*)\):[ \t\n\r]*([^ \t\n\r;]*)")
+        class_methods_reg_exp = re.compile("([override]*)\W*([public|private|protected]*)\W*([override]*)\W*function\W+([^ \t\n\r:\(]+)[ \t\n\r]*\(([^/)]*)\)[ \t\n\r]*:[ \t\n\r]*([^ \t\n\r;]*)")
+        class_getters_reg_exp = re.compile("([override]*)\W*([public|private|protected]*)\W*([override]*)\W*function\W+get\W+([^ \t\n\r:\(]+)[ \t\n\r]*\(([^/)]*)\)[ \t\n\r]*:[ \t\n\r]*([^ \t\n\r;]*)")
+        class_setters_reg_exp = re.compile("([override]*)\W*([public|private|protected]*)\W*([override]*)\W*function\W+set\W+([^ \t\n\r:\(]+)[ \t\n\r]*\(([^/)]*)\)[ \t\n\r]*:[ \t\n\r]*([^ \t\n\r;]*)")
         class_remove_method_bodies_reg_exp = re.compile("{([^{])*?}")
 
         package_res = package_reg_exp.search(smashed)
