@@ -1,6 +1,20 @@
 (defvar as3parser-client-path "~/Projects/as3parser/client.py")
 (defvar as3parser-server-path "~/Projects/as3parser/server.py --force &")
 
+(defun as3parser-find-git-root ()
+  (interactive)
+  (setq git-root-folder "")
+  (setq git-root (locate-dominating-file (file-name-as-directory (file-name-directory buffer-file-name)) ".git"))
+  (if (= (length git-root) 0)
+      (message "as3parser-find-git-root Git root not found!")
+    (progn
+      (message (concat "as3parser-find-git-root Git root located" git-root))
+      (setq git-root-parts (delete "" (split-string git-root "/")))
+      (dolist (line git-root-parts)
+	(setq git-root-folder line))
+      (message git-root-folder)))
+  git-root-folder)
+
 (defun as3parser-start-server ()
   "Starts the auto complete server."
   (interactive)
@@ -34,7 +48,12 @@
 
 (defun as3parser-set-project (name)
   "Sets project scope. Current session cache is lost."
-  (interactive "sProject name: ")
+  (interactive "sProject name <leave empty for .git root>: ")
+  (if (= (length name) 0)
+      (progn
+	(message "as3parser-set-project No project specified! Will use the current git project!")
+	(setq name (as3parser-find-git-root)))
+    (message "as3parser-set-project Project name passed!"))
   (setq command (concat as3parser-client-path " " "set-project" " " name))
   (shell-command command)
   (message (concat "as3parser-set-project Current project set to " name)))
