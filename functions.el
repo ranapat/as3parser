@@ -25,7 +25,7 @@
 (defun as3parser-complete ()
   "Tries to autocomplete"
   (interactive)
-  (setq command (concat as3parser-client-path " " "\"" (replace-regexp-in-string "\r" "" (replace-regexp-in-string "\n" "" (replace-regexp-in-string "\"" "'" (thing-at-point 'line)))) "\"" " " "\"" (replace-regexp-in-string "\r" "" (replace-regexp-in-string "\n" "" (replace-regexp-in-string "\"" "'" (buffer-string))))  "\""))
+  (setq command (concat as3parser-client-path " " "\"" (replace-regexp-in-string "%" "#percent#" (replace-regexp-in-string "\r" "" (replace-regexp-in-string "\n" "" (replace-regexp-in-string "\"" "'" (thing-at-point 'line))))) "\"" " " "\"" (replace-regexp-in-string "%" "#percent#" (replace-regexp-in-string "\r" "" (replace-regexp-in-string "\n" "" (replace-regexp-in-string "\"" "'" (buffer-string))))) "\""))
 
   (setq result (shell-command-to-string command))
 
@@ -110,7 +110,7 @@
 (defun as3parser-load-from-content ()
   "Loads class definition from a content."
   (interactive)
-  (setq command (concat as3parser-client-path " " "load-from-content" " " "\"" (replace-regexp-in-string "\r" "" (replace-regexp-in-string "\n" "" (replace-regexp-in-string "\"" "'" (buffer-string)))) "\""))
+  (setq command (concat as3parser-client-path " " "load-from-content" " " "\"" (replace-regexp-in-string "%" "#percent#" (replace-regexp-in-string "\r" "" (replace-regexp-in-string "\n" "" (replace-regexp-in-string "\"" "'" (buffer-string))))) "\""))
   (message command)
   (shell-command command)
   (message "as3parser-load-from-content Complete!"))
