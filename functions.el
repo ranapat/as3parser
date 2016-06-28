@@ -111,7 +111,6 @@
   "Loads class definition from a content."
   (interactive)
   (setq command (concat as3parser-client-path " " "load-from-content" " " "\"" (replace-regexp-in-string "%" "#percent#" (replace-regexp-in-string "\r" "" (replace-regexp-in-string "\n" "" (replace-regexp-in-string "\"" "'" (buffer-string))))) "\""))
-  (message command)
   (shell-command command)
   (message "as3parser-load-from-content Complete!"))
 (global-set-key (kbd "C-c C-b") 'as3parser-load-from-content)
