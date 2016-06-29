@@ -22,10 +22,10 @@
   (shell-command command)
   (message (concat "as3parser-start-server Server Started!")))
 
-(defun as3parser-complete ()
-  "Tries to autocomplete"
+(defun as3parser (mode)
+  "Tries to autocomplete or remind"
   (interactive)
-  (setq command (concat as3parser-client-path " " "\"" (replace-regexp-in-string "%" "#percent#" (replace-regexp-in-string "\r" "" (replace-regexp-in-string "\n" "" (replace-regexp-in-string "\"" "'" (thing-at-point 'line))))) "\"" " " "\"" (replace-regexp-in-string "%" "#percent#" (replace-regexp-in-string "\r" "" (replace-regexp-in-string "\n" "" (replace-regexp-in-string "\"" "'" (buffer-string))))) "\""))
+  (setq command (concat as3parser-client-path " " mode " " "\"" (replace-regexp-in-string "%" "#percent#" (replace-regexp-in-string "\r" "" (replace-regexp-in-string "\n" "" (replace-regexp-in-string "\"" "'" (thing-at-point 'line))))) "\"" " " "\"" (replace-regexp-in-string "%" "#percent#" (replace-regexp-in-string "\r" "" (replace-regexp-in-string "\n" "" (replace-regexp-in-string "\"" "'" (buffer-string))))) "\""))
 
   (setq result (shell-command-to-string command))
 
@@ -44,7 +44,18 @@
 	(setq to-complete (popup-menu* popup-items))
 	(insert-before-markers to-complete))
     (message "as3parser-complete Nothing to complete!")))
+
+(defun as3parser-complete ()
+     "Tries to autocomplete"
+     (interactive)
+     (as3parser "complete"))
 (global-set-key (kbd "C-c SPC") 'as3parser-complete)
+
+(defun as3parser-remind ()
+     "Tries to remind"
+     (interactive)
+     (as3parser "remind"))
+(global-set-key (kbd "C-c C-SPC") 'as3parser-remind)
 
 (defun as3parser-set-project (name)
   "Sets project scope. Current session cache is lost."
