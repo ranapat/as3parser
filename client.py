@@ -20,7 +20,8 @@ def main():
         print_help_line("load-from-file <file>", "Loads class definition from a source file.")
         print_help_line("load-from-directory <directory>", "Loads class definition form a source directory.")
         print_help_line("load-from-content <content>", "Loads class definition from a content.")
-        print_help_line("<line> <content>", "Tries to autocomplete.")
+        print_help_line("complete <line> <content>", "Tries to autocomplete.")
+        print_help_line("remind <line> <content>", "Tries to remind the current function parameters.")
 
         return 1
 
@@ -31,9 +32,15 @@ def main():
     if len(sys.argv) == 2:
         first_parameter = sys.argv[1]
         second_parameter = None
+        third_parameter = None
     elif len(sys.argv) == 3:
         first_parameter = sys.argv[1]
         second_parameter = sys.argv[2]
+        third_parameter = None
+    elif len(sys.argv) == 4:
+        first_parameter = sys.argv[1]
+        second_parameter = sys.argv[2]
+        third_parameter = sys.argv[3]
 
     if first_parameter == "load-from-cache":
         wrapper.load_from_cache()
@@ -51,8 +58,12 @@ def main():
         wrapper.load_from_content(second_parameter)
     elif first_parameter == "set-project" and second_parameter is not None:
         wrapper.set_project(second_parameter)
+    elif first_parameter == "complete" and second_parameter is not None and third_parameter is not None:
+        print wrapper.complete(second_parameter, third_parameter)
+    elif first_parameter == "remind" and second_parameter is not None and third_parameter is not None:
+        print wrapper.remind(second_parameter, third_parameter)
     else:
-        print wrapper.complete(first_parameter, second_parameter)
+        print ""
 
     return 0
 
@@ -60,4 +71,4 @@ if __name__ == "__main__":
     try:
         sys.exit(main())
     except:
-        pass
+        raise

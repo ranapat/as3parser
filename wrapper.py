@@ -41,4 +41,7 @@ class Wrapper(Pyro.core.ObjBase):
         self.load_from_cache()
         
     def complete(self, line, content):
-        return self.analyzer.guess(line, content)
+        return self.analyzer.guess(line, content, False)
+
+    def remind(self, line, content):
+        return self.analyzer.guess(line, content, True)

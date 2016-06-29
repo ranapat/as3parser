@@ -9,7 +9,7 @@ class Analyzer:
 
         self.result = []
         
-    def guess(self, line, content = ""):
+    def guess(self, line, content = "", brackets = False):
         self.reset_result()
         self.strip_content(content)
 
@@ -17,61 +17,62 @@ class Analyzer:
         while remove_things_in_closed_brackets_reg_exp.search(line) is not None:
             line = remove_things_in_closed_brackets_reg_exp.sub("", line)
 
-        pending_bracket_res = re.compile("([^\(\) \t\n\r]*)\W*\(([^\)\(]*?)$").search(line)
-        if pending_bracket_res is not None:
-            pending_bracket_groups = pending_bracket_res.groups()
-            if len(pending_bracket_groups) == 2:
-                function_name = pending_bracket_groups[0]
-                function_parameters = pending_bracket_groups[1]
-                function_at_parameter = len(function_parameters.split(","))
+        if brackets is True:
+            pending_bracket_res = re.compile("([^\(\) \t\n\r]*)\W*\(([^\)\(]*?)$").search(line)
+            if pending_bracket_res is not None:
+                pending_bracket_groups = pending_bracket_res.groups()
+                if len(pending_bracket_groups) == 2:
+                    function_name = pending_bracket_groups[0]
+                    function_parameters = pending_bracket_groups[1]
+                    function_at_parameter = len(function_parameters.split(","))
 
-                local_function = self.locate_function(function_name)
-                if len(local_function) != 0:
-                    for data in local_function:
-                        self.to_result(function_name + "(" + data[0] + ")" + ":" + data[1], data[0])
-                    return self.result_to_string("tooltip")
-                else:
-                    matching_class = self.parser.look_for(function_name)
-                    if matching_class is not None:
-                        for data in matching_class["constructor"]:
-                            if data != "":
-                                self.to_result(matching_class["name"] + "(" + data + ")", data)
-                            else:
-                                self.to_result(matching_class["name"] + "()", "")
-                        return self.result_to_string("tooptip")
+                    local_function = self.locate_function(function_name)
+                    if len(local_function) != 0:
+                        for data in local_function:
+                            self.to_result(function_name + "(" + data[0] + ")" + ":" + data[1], data[0])
+                        return self.result_to_string("tooltip")
                     else:
-                        sub_parts = function_name.split(".")
-                        if len(sub_parts) > 1:
-                            if sub_parts[0] == "this":
-                                sub_parts = sub_parts[1:]
+                        matching_class = self.parser.look_for(function_name)
+                        if matching_class is not None:
+                            for data in matching_class["constructor"]:
+                                if data != "":
+                                    self.to_result(matching_class["name"] + "(" + data + ")", data)
+                                else:
+                                    self.to_result(matching_class["name"] + "()", "")
+                            return self.result_to_string("tooptip")
+                        else:
+                            sub_parts = function_name.split(".")
+                            if len(sub_parts) > 1:
+                                if sub_parts[0] == "this":
+                                    sub_parts = sub_parts[1:]
                             
-                            sub_index = 0
-                            sub_type = sub_parts[0]
+                                sub_index = 0
+                                sub_type = sub_parts[0]
 
-                            local_member = self.locate_member(sub_type)
-                            if len(sub_parts) > 1 and len(local_member) != 0:
-                                sub_items = self.parser.complete_member(sub_parts[sub_index + 1] + "$", local_member[0])
-                                if len(sub_items) > 0:
-                                    sub_item = sub_items[0]
+                                local_member = self.locate_member(sub_type)
+                                if len(sub_parts) > 1 and len(local_member) != 0:
+                                    sub_items = self.parser.complete_member(sub_parts[sub_index + 1] + "$", local_member[0])
+                                    if len(sub_items) > 0:
+                                        sub_item = sub_items[0]
 
-                                    while sub_index + 1 < len(sub_parts) - 1:
-                                        sub_items = self.parser.complete_member(sub_parts[sub_index + 2] + "$", sub_item["type"])
-                                        if len(sub_items) > 0:
-                                            sub_item = sub_items[0]
-                                        else:
-                                            sub_item = None
-                                        sub_index += 1
+                                        while sub_index + 1 < len(sub_parts) - 1:
+                                            sub_items = self.parser.complete_member(sub_parts[sub_index + 2] + "$", sub_item["type"])
+                                            if len(sub_items) > 0:
+                                                sub_item = sub_items[0]
+                                            else:
+                                                sub_item = None
+                                            sub_index += 1
 
-                                    if sub_item is not None:
-                                        if sub_item["node"] == "method":
-                                            self.to_result(("+" if sub_item["visibility"] == "public" else "*" if sub_item["visibility"] == "protected" else "-") + " " + sub_item["name"] + "(" + sub_item["parameters"] + ")" + ":" + sub_item["type"], sub_item["parameters"])
-                                        else:
-                                            self.to_result(("+" if sub_item["visibility"] == "public" else "*" if sub_item["visibility"] == "protected" else "-") + " " + sub_item["name"] + ":" + sub_item["type"], "")
-                                return self.result_to_string("tooltip")
+                                        if sub_item is not None:
+                                            if sub_item["node"] == "method":
+                                                self.to_result(("+" if sub_item["visibility"] == "public" else "*" if sub_item["visibility"] == "protected" else "-") + " " + sub_item["name"] + "(" + sub_item["parameters"] + ")" + ":" + sub_item["type"], sub_item["parameters"])
+                                            else:
+                                                self.to_result(("+" if sub_item["visibility"] == "public" else "*" if sub_item["visibility"] == "protected" else "-") + " " + sub_item["name"] + ":" + sub_item["type"], "")
+                                    return self.result_to_string("tooltip")
+                                else:
+                                    return ""
                             else:
                                 return ""
-                        else:
-                            return ""
 
         current_line_res = re.compile("([^ \t\n\r]+)[ |\t|\n|\r]+([^ \t\n\r]+)$").search(line)
         if current_line_res is not None:
@@ -84,7 +85,16 @@ class Analyzer:
                     self.to_result(data["package"] + "." + data["name"], data["name"].replace(current, ""))
                 return self.result_to_string("complete")
 
-        pending_no_bracket_res = re.compile("([^\(\) \t\n\r]*)$").search(line)
+        type_res = re.compile(":[ |\t|\n|\r]*([^\.\(\)\{\} \t\n\r]+)$").search(line)
+        if type_res is not None:
+            type_groups = type_res.groups()
+            type_name = type_groups[0]
+
+            for data in self.parser.complete_class(type_name):
+                self.to_result(data["package"] + "." + data["name"], data["name"].replace(type_name, ""))
+            return self.result_to_string("complete")
+            
+        pending_no_bracket_res = re.compile("([^\(\): \t\n\r]*)$").search(line)
         if pending_no_bracket_res is not None:
             pending_no_bracket_groups = pending_no_bracket_res.groups()
             if len(pending_no_bracket_groups) == 1:
