@@ -22,7 +22,7 @@
   (shell-command command)
   (message (concat "as3parser-start-server Server Started!")))
 
-(defun as3parser (mode)
+(defun as3parser (mode complete-tooltips)
   "Tries to autocomplete or remind"
   (interactive)
   (setq command (concat as3parser-client-path " " mode " " "\"" (replace-regexp-in-string "%" "#percent#" (replace-regexp-in-string "\r" "" (replace-regexp-in-string "\n" "" (replace-regexp-in-string "\"" "'" (thing-at-point 'line))))) "\"" " " "\"" (replace-regexp-in-string "%" "#percent#" (replace-regexp-in-string "\r" "" (replace-regexp-in-string "\n" "" (replace-regexp-in-string "\"" "'" (buffer-string))))) "\""))
@@ -33,29 +33,42 @@
   (setq type (pop split))
 
   (setq popup-items '())
+  (setq popup-tooltip-message "")
   (dolist (line split)
     (setq split-line (delete "" (split-string line "@@@")))
     (setq to-show (pop split-line))
     (setq to-write (pop split-line))
-    (add-to-list 'popup-items (popup-make-item to-show :value to-write)))
+    (if (string-equal "complete" type)
+	(add-to-list 'popup-items (popup-make-item to-show :value to-write))
+      (setq popup-tooltip-message to-write)))
 
   (if (< 0 (length popup-items))
       (progn
 	(setq to-complete (popup-menu* popup-items))
 	(insert-before-markers to-complete))
-    (message "as3parser-complete Nothing to complete!")))
+    (if (> (length popup-tooltip-message) 0)
+	(if (string-equal "yes" complete-tooltips)
+	    (insert-before-markers popup-tooltip-message)
+	  (popup-tip popup-tooltip-message))
+      (message "as3parser-complete Nothing to complete!"))))
 
 (defun as3parser-complete ()
      "Tries to autocomplete"
      (interactive)
-     (as3parser "complete"))
+     (as3parser "complete" "no"))
 (global-set-key (kbd "C-c SPC") 'as3parser-complete)
 
 (defun as3parser-remind ()
      "Tries to remind"
      (interactive)
-     (as3parser "remind"))
+     (as3parser "remind" "no"))
 (global-set-key (kbd "C-c C-SPC") 'as3parser-remind)
+
+(defun as3parser-remind-complete ()
+     "Tries to remind"
+     (interactive)
+     (as3parser "remind" "yes"))
+(global-set-key (kbd "C-c RET") 'as3parser-remind-complete)
 
 (defun as3parser-set-project (name)
   "Sets project scope. Current session cache is lost."
