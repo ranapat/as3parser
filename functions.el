@@ -1,6 +1,20 @@
 (defvar as3parser-client-path "~/Projects/as3parser/client.py")
 (defvar as3parser-server-path "~/Projects/as3parser/server.py --force &")
 
+(defun as3parser-run-project ()
+  "Tries to run the project"
+  (interactive)
+  (setq git-root (locate-dominating-file (file-name-as-directory (file-name-directory buffer-file-name)) ".git"))
+  (if (= (length git-root) 0)
+      (message "as3parser-run-project Git root not found!")
+    (progn
+      (message (concat "as3parser-run-project Git root located" git-root))
+      (setq command (concat git-root "scripts/run"))
+      (message command)
+      (shell-command command)
+      )))
+(global-set-key (kbd "M-RET") 'as3parser-run-project)
+
 (defun as3parser-find-git-root ()
   "Tries to find the git root folder"
   (interactive)
