@@ -89,7 +89,7 @@
   (setq command (concat as3parser-client-path " " "load-from-cache"))
   (shell-command command)
   (message "as3parser-load-from-cache Complete!"))
-(global-set-key (kbd "C-c C-l") 'as3parser-load-from-cache)
+;;(global-set-key (kbd "C-c C-l") 'as3parser-load-from-cache)
 
 (defun as3parser-save-to-cache ()
   "Saves class definition to the cache."
@@ -97,7 +97,7 @@
   (setq command (concat as3parser-client-path " " "save-to-cache"))
   (shell-command command)
   (message "as3parser-save-to-cache Complete!"))
-(global-set-key (kbd "C-c C-s") 'as3parser-save-to-cache)
+;;(global-set-key (kbd "C-c C-s") 'as3parser-save-to-cache)
 
 (defun as3parser-reset-cache ()
   "Resets the session cache."
@@ -105,7 +105,7 @@
   (setq command (concat as3parser-client-path " " "reset-cache"))
   (shell-command command)
   (message "as3parser-reset-cache Complete!"))
-(global-set-key (kbd "C-c C-r") 'as3parser-reset-cache)
+;;(global-set-key (kbd "C-c C-r") 'as3parser-reset-cache)
 
 (defun as3parser-reset-class (name)
   "Removes class definition from the cache."
@@ -113,7 +113,7 @@
   (setq command (concat as3parser-client-path " " "reset-class" " " name))
   (shell-command command)
   (message "as3parser-reset-class Complete!"))
-(global-set-key (kbd "C-c C-c") 'as3parser-reset-class)
+;;(global-set-key (kbd "C-c C-c") 'as3parser-reset-class)
 
 (defun as3parser-load-from-file (name)
   "Loads class definition from a source file."
@@ -121,7 +121,7 @@
   (setq command (concat as3parser-client-path " " "load-from-file" " " name))
   (shell-command command)
   (message "as3parser-load-from-file Complete!"))
-(global-set-key (kbd "C-c C-f") 'as3parser-load-from-file)
+;;(global-set-key (kbd "C-c C-f") 'as3parser-load-from-file)
 
 (defun as3parser-load-from-directory (name)
   "Loads class definition form a source directory."
@@ -129,7 +129,7 @@
   (setq command (concat as3parser-client-path " " "load-from-directory" " " name))
   (shell-command command)
   (message "as3parser-load-from-directory Complete!"))
-(global-set-key (kbd "C-c C-d") 'as3parser-load-from-directory)
+;;(global-set-key (kbd "C-c C-d") 'as3parser-load-from-directory)
 
 (defun as3parser-load-from-content ()
   "Loads class definition from a content."
