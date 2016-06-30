@@ -84,6 +84,10 @@ class Analyzer:
                 for data in self.parser.complete_class(current):
                     self.to_result(data["package"] + "." + data["name"], data["name"].replace(current, ""))
                 return self.result_to_string("complete")
+            elif previous == "import":
+                for data in self.parser.complete_class(current):
+                    self.to_result(data["package"] + "." + data["name"], data["package"] + "."+ data["name"])
+                return self.result_to_string("complete" + "-" + str(len(current)))
 
         type_res = re.compile(":[ |\t|\n|\r]*([^\.\(\)\{\} \t\n\r]+)$").search(line)
         if type_res is not None:

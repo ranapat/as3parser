@@ -39,13 +39,16 @@
     (setq split-line (delete "" (split-string line "@@@")))
     (setq to-show (pop split-line))
     (setq to-write (pop split-line))
-    (if (string-equal "complete" type)
+    (if (string-prefix-p "complete" type)
 	(add-to-list 'popup-items (popup-make-item to-show :value to-write))
       (setq popup-tooltip-message to-write)))
 
   (if (< 0 (length popup-items))
       (progn
 	(setq to-complete (popup-menu* popup-items))
+	(setq offset (replace-regexp-in-string "complete" "" type))
+	(if (> (length offset) 0)
+	    (delete-char (string-to-int offset)))
 	(insert-before-markers to-complete))
     (if (> (length popup-tooltip-message) 0)
 	(if (string-equal "yes" complete-tooltips)
