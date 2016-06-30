@@ -161,11 +161,18 @@
 	  (setq part-2 (pop line-parts))
 	  (if (string-equal "import" part-1)
 	      (progn
-		(setq import-parts (delete "" (split-string part-2 "\\.")))
+		(setq part-2-fine (delete "" (split-string part-2 ";")))
+	        (setq part-2-refine (pop part-2-fine))
+		(setq import-parts (delete "" (split-string part-2-refine "\\.")))
 		(setq last-part "")
 		(dolist (part import-parts)
 		  (setq last-part part))
-		(if (string-match-p (concat ":[ |\t]*" last-part "[ |\t|\n|\r|;|,|=]+") current-buffer)
+		(if (or
+		     (string-match-p (concat ":[ |\t]*" last-part "[ |\t|\n|\r|;|,|=|\)|\(]+") current-buffer)
+		     (string-match-p (concat last-part "\\.") current-buffer)
+		     (string-match-p (concat last-part "[ |\t|\n|\r]*\(") current-buffer)
+		     (string-match-p (concat "new[ |\t|\n|\r]+" last-part) current-buffer)
+		     (string-match-p (concat "extends[ |\t|\n|\r]+" last-part) current-buffer))
 		    (progn
 		      (message (concat "as3parser-check-import Class " last-part " from Package sequence " part-2 " seems to be used." ))
 		      (setq start-point (+ 1(string-match-p line current-buffer)))
