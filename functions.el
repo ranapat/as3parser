@@ -2,6 +2,7 @@
 (defvar as3parser-server-path "~/Projects/as3parser/server.py --force &")
 
 (defun as3parser-find-git-root ()
+  "Tries to find the git root folder"
   (interactive)
   (setq git-root-folder "")
   (setq git-root (locate-dominating-file (file-name-as-directory (file-name-directory buffer-file-name)) ".git"))
@@ -138,3 +139,44 @@
   (shell-command command)
   (message "as3parser-load-from-content Complete!"))
 (global-set-key (kbd "C-c C-b") 'as3parser-load-from-content)
+
+(defun as3parser-chomp (str)
+  "Chomp leading and tailing whitespace from STR."
+  (while (string-match "\\`\n+\\|^\\s-+\\|\\s-+$\\|\n+\\'"
+		       str)
+    (setq str (replace-match "" t t str)))
+  str)
+
+(defun as3parser-check-imports ()
+  "Checks for not used imports"
+  (interactive)
+  (message "as3parser-check-import start***")
+  (setq current-buffer (buffer-string))
+  (setq lines (delete "" (split-string current-buffer "\n")))
+  (dolist (line lines)
+    (setq line-parts (delete "" (split-string line " ")))
+    (if (= 2 (length line-parts))
+	(progn
+	  (setq part-1 (as3parser-chomp (pop line-parts)))
+	  (setq part-2 (pop line-parts))
+	  (if (string-equal "import" part-1)
+	      (progn
+		(setq import-parts (delete "" (split-string part-2 "\\.")))
+		(setq last-part "")
+		(dolist (part import-parts)
+		  (setq last-part part))
+		(if (string-match-p (concat ":[ |\t]*" last-part "[ |\t|\n|\r|;|,|=]+") current-buffer)
+		    (progn
+		      (message (concat "as3parser-check-import Class " last-part " from Package sequence " part-2 " seems to be used." ))
+		      (setq start-point (+ 1(string-match-p line current-buffer)))
+		      (setq end-point (+ start-point (length line)))
+		      (let ((x (make-overlay start-point end-point)))
+			(remove-overlays start-point end-point)))
+		  (progn
+		    (message (concat "as3parser-check-import Class " last-part " from Package sequence " part-2 " does NOT seem to be in use!"))
+		    (setq start-point (+ 1(string-match-p line current-buffer)))
+		    (setq end-point (+ start-point (length line)))
+		    (let ((x (make-overlay start-point end-point)))
+		      (overlay-put x 'face '(:background "#ffcccc"))))))))))
+  (message "as3parser-check-imports end***"))
+(global-set-key (kbd "C-c i") 'as3parser-check-imports)
