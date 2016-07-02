@@ -26,7 +26,9 @@ class Analyzer:
                     function_parameters = pending_bracket_groups[1]
                     function_at_parameter = len(function_parameters.split(","))
 
-                    local_function = self.locate_function(function_name)
+                    function_name_purified = function_name.replace("this.", "")
+
+                    local_function = self.locate_function(function_name_purified)
                     if len(local_function) != 0:
                         for data in local_function:
                             self.to_result(function_name + "(" + data[0] + ")" + ":" + data[1], data[0])
