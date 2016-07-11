@@ -188,8 +188,8 @@
 		     (string-match-p (concat ":[ |\t]*" last-part "[ |\t|\n|\r|;|,|=|\)|\(]+") current-buffer)
 		     (string-match-p (concat last-part "\\.") current-buffer)
 		     (string-match-p (concat last-part "[ |\t|\n|\r]*\(") current-buffer)
-		     (string-match-p (concat "new[ |\t|\n|\r]+" last-part) current-buffer)
-		     (string-match-p (concat "extends[ |\t|\n|\r]+" last-part) current-buffer))
+		     (string-match-p (concat "new[ |\t|\n|\r]+" last-part "[ |\t|\n|\r]*\(") current-buffer)
+		     (string-match-p (concat "extends[ |\t|\n|\r]+" last-part "[ |\t|\n|\r|{]+") current-buffer))
 		    (progn
 		      (message (concat "as3parser-check-import Class " last-part " from Package sequence " part-2 " seems to be used." ))
 		      (setq start-point (+ 1(string-match-p line current-buffer)))
